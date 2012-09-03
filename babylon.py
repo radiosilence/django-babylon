@@ -3,24 +3,30 @@ import hashlib
 from django.core.cache import cache as django_cache
 from django.db.models.signals import post_save
 
+VERSION = '0.0.1'
+APPLICATION = 'django-babylon'
+
 CACHES = {}
 
 def register(cache):
+    """Register a cache so it can be used."""
     if not hasattr(CACHES, cache.__name__):
         CACHES[cache.__name__] = cache(CACHES)
 
 def get(cache, instance):
+    """Get a cache with a certain primary instance."""
     if not str(cache):
         cache = cache.__name__
     return CACHES[cache].get(instance)
 
 
 class Cache(object):
+    """This is the class from which to inherit from."""
     model = None
     dependencies = []
     hooks = ()
     generic = False
-    TIMEOUT = 86400
+    TIMEOUT = 86400*7
 
     def __init__(self, caches):
         self._parents = []
