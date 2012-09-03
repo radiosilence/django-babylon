@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 
-from babylon import APPLICATION, VERSION
+VERSION = '0.0.1'
+APPLICATION = 'django-babylon'
 
 setup(
     name=APPLICATION,

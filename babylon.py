@@ -3,9 +3,6 @@ import hashlib
 from django.core.cache import cache as django_cache
 from django.db.models.signals import post_save
 
-VERSION = '0.0.1'
-APPLICATION = 'django-babylon'
-
 CACHES = {}
 
 def register(cache):
@@ -26,7 +23,7 @@ class Cache(object):
     dependencies = []
     hooks = ()
     generic = False
-    TIMEOUT = 86400*7
+    TIMEOUT = 86400*7   
 
     def __init__(self, caches):
         self._parents = []
