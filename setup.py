@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 APPLICATION = 'django-babylon'
 
 setup(
@@ -11,7 +11,7 @@ setup(
     url='https://github.com/radiosilence/django-babylon',
     author='James Cleveland',
     author_email='jamescleveland@gmail.com',
-    py_modules=['babylon'],
+    packages=find_packages(),
     include_package_data=True,
     license="LICENSE.txt",
     install_requires=open('requirements.txt').read().split("\n")
