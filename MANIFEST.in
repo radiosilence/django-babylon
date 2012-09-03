@@ -1,0 +1,2 @@
+include *.txt *.rst
+recursive-include babylon *.html *.js *.png *.jpg *.svg *.css
