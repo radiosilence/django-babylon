@@ -41,7 +41,7 @@ class Cache(object):
 
         self._hooks()
 
-    def key(self, instance):
+    def key(self, instance, *args, **kwargs):
         key = '{}:{}'.format(self.__class__.__name__, instance.pk)
         return hashlib.sha1(key).hexdigest()
 
@@ -49,14 +49,15 @@ class Cache(object):
         return self._children[child].get(instance)
 
     def get(self, instance, *args, **kwargs):
-        result = django_cache.get(self.key(instance))
+        result = django_cache.get(self.key(instance, *args, **kwargs))
         if not result:
-            result = self.generate(instance)
-            self.set(instance, result)
+            result = self.generate(instance, *args, **kwargs)
+            self.set(instance, result, *args, **kwargs)
         return result
 
-    def set(self, instance, data):
-        django_cache.set(self.key(instance), data, Cache.TIMEOUT)
+    def set(self, instance, data, *args, **kwargs):
+        django_cache.set(self.key(instance, *args, **kwargs),
+            data, Cache.TIMEOUT)
 
     def _hooks(self):
         for model, func in self.hooks:
