@@ -10,11 +10,11 @@ def register(cache):
     if not hasattr(CACHES, cache.__name__):
         CACHES[cache.__name__] = cache(CACHES)
 
-def get(cache, instance):
+def get(cache, instance, *args, **kwargs):
     """Get a cache with a certain primary instance."""
     if not str(cache):
         cache = cache.__name__
-    return CACHES[cache].get(instance)
+    return CACHES[cache].get(instance, *args, **kwargs)
 
 
 class Cache(object):
@@ -48,7 +48,7 @@ class Cache(object):
     def child(self, child, instance):
         return self._children[child].get(instance)
 
-    def get(self, instance):
+    def get(self, instance, *args, **kwargs):
         result = django_cache.get(self.key(instance))
         if not result:
             result = self.generate(instance)
