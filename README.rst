@@ -17,3 +17,12 @@ Of course I will expand the documentation because this project is blatantly
 really useful for defining a decent caching scheme instead of shitting out some
 half baked attempt that confuses people and gives everyone stale data all the
 time.
+
+To-Do
+-----
+
+ * Template tags to access HTML templates.
+ * Documentation
+ * Tests
+ * Sorting out how best to trick fucking python-memcached into doing infinite
+   caching.
