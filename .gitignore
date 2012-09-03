@@ -1,0 +1,10 @@
+dist/
+*egg-info*/
+static/
+!suave/static/
+*.db
+*.pyc
+.svn/
+media/
+settings_local.py
+*.swp
