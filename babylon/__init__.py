@@ -35,6 +35,7 @@ class Cache(object):
     dependencies = []
     hooks = ()
     generic = False
+    key_attr = 'id'
     TIMEOUT = 86400*7   
 
     def __init__(self, caches):
@@ -59,8 +60,8 @@ class Cache(object):
     def key(self, *args, **kwargs):
         key = '{}'.format(self.__class__.__name__)
         for arg in args:
-            if hasattr(arg, '__key__'):
-                ikey = arg.__key__()
+            if hasattr(arg, self.key_attr):
+                ikey = getattr(arg, self.key_attr)
             elif hasattr(arg, 'id'):
                 ikey = arg.id
             else:
@@ -69,8 +70,8 @@ class Cache(object):
             key += ':{}'.format(ikey)
         return hashlib.sha1(key).hexdigest()
 
-    def child(self, child, instance):
-        return self._children[child].get(instance)
+    def child(self, child, *args, **kwargs):
+        return self._children[child].get(*args, **kwargs)
 
     def get(self, *args, **kwargs):
         result = django_cache.get(self.key(*args, **kwargs))
@@ -91,7 +92,7 @@ class Cache(object):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
         if instance:
-            self.set(instance, self.generate(instance))
+            self.set(self.generate(instance=instance), instance, *args, **kwargs)
         else:
             for obj in self.model.objects.all():
                 self.invalidate(sender, instance=obj)
@@ -100,6 +101,6 @@ class Cache(object):
 
 
     @abc.abstractmethod
-    def generate(self, instance):
+    def generate(self, *args, **kwargs):
         """This method should return up to date contents of the cache."""
         return
