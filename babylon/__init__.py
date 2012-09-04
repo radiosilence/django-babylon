@@ -59,15 +59,14 @@ class Cache(object):
 
     def key(self, *args, **kwargs):
         key = '{}'.format(self.__class__.__name__)
-        for arg in args:
-            if hasattr(arg, self.key_attr):
-                ikey = getattr(arg, self.key_attr)
-            elif hasattr(arg, 'id'):
-                ikey = arg.id
-            else:
-                ikey = arg
-            
-            key += ':{}'.format(ikey)
+        if not self.generic:
+            for arg in args:
+                if hasattr(arg, self.key_attr):
+                    ikey = getattr(arg, self.key_attr)
+                else:
+                    ikey = arg
+                
+                key += ':{}'.format(ikey)
         return hashlib.sha1(key).hexdigest()
 
     def child(self, child, *args, **kwargs):
