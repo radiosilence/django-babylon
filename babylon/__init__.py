@@ -33,6 +33,7 @@ class Cache(object):
 
     model = None
     dependencies = []
+    extra_delete_args = []
     hooks = ()
     generic = False
     key_attr = 'id'
@@ -82,6 +83,12 @@ class Cache(object):
     def set(self, data, *args, **kwargs):
         django_cache.set(self.key(*args, **kwargs),
             data, Cache.TIMEOUT)
+
+    def delete(self, *args, **kwargs):
+
+        for arg in self.extra_delete_args:
+            django_cache.delete(self.key(*(args + (arg,)), **kwargs))
+        django_cache.delete(self.key(*args, **kwargs))
 
     def _hooks(self):
         for model, func in self.hooks:
