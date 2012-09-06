@@ -39,7 +39,8 @@ class Cache(object):
     generic = False
     key_attr = 'id'
     m2m_models = []
-    TIMEOUT = 86400*7   
+    TIMEOUT = 86400*7
+
 
     def __init__(self, caches):
         self._parents = []
@@ -103,9 +104,10 @@ class Cache(object):
             post_save.connect(getattr(self, func), sender=model)
 
     def _m2m_invalidate(self, sender=None, instance=None, *args, **kwargs):
-        self.invalidate(sender, instance=instance, *args, **kwargs)
+        self.invalidate(instance=instance, *args, **kwargs)
 
-    def invalidate(self, sender, instance=None, *args, **kwargs):
+
+    def invalidate(self, instance=None, child=None, *args, **kwargs):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
         if instance:
@@ -117,16 +119,21 @@ class Cache(object):
 
         elif self.model:
             for obj in self.model.objects.all():
-                self.invalidate(sender, instance=obj)
+                self.invalidate(instance=obj)
         for parent in self._parents:
-            parent.invalidate(sender, instance=instance, *args, **kwargs)
+            parent.invalidate(child=instance, *args, **kwargs)
 
 
-    def generate(self, instance=None, *args, **kwargs):
-        print "GENERATE", instance, args, kwargs
+    def generate(self, key=None, instance=None, *args, **kwargs):
+        if not instance and not key:
+            return self.model.objects.all()
         if instance:
-            return self.model.objects.select_related().get(id=instance.id)
-        return self.model.objects.all()
+            key = getattr(instance, self.key_attr)
+        if instance:
+            return self.model.objects.select_related().get(**{
+                self.key_attr: key
+            })
+        
 
 
 def debug_caches():
