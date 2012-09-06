@@ -2,9 +2,10 @@ import hashlib
 import abc
 
 from django.core.cache import cache as django_cache
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 
 CACHES = {}
+
 
 def register(cache, parents=None):
     """Register a cache so it can be used."""
@@ -37,6 +38,7 @@ class Cache(object):
     hooks = ()
     generic = False
     key_attr = 'id'
+    m2m_models = []
     TIMEOUT = 86400*7   
 
     def __init__(self, caches):
@@ -49,8 +51,14 @@ class Cache(object):
                 caches[cls] = instance
             else:
                 instance = caches[cls]
-            self.add_child(instance)    
-        post_save.connect(self.invalidate, sender=self.model)
+            self.add_child(instance)
+
+        if self.model:
+            post_save.connect(self.invalidate, sender=self.model,
+                weak=False)
+        for model in self.m2m_models:
+            m2m_changed.connect(self._m2m_invalidate, sender=model,
+                weak=False)
 
         self._hooks()
 
@@ -94,6 +102,9 @@ class Cache(object):
         for model, func in self.hooks:
             post_save.connect(getattr(self, func), sender=model)
 
+    def _m2m_invalidate(self, sender=None, instance=None, *args, **kwargs):
+        self.invalidate(sender, instance=instance, *args, **kwargs)
+
     def invalidate(self, sender, instance=None, *args, **kwargs):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
@@ -108,13 +119,13 @@ class Cache(object):
             for obj in self.model.objects.all():
                 self.invalidate(sender, instance=obj)
         for parent in self._parents:
-            parent.invalidate(None, *args, **kwargs)
+            parent.invalidate(sender, instance=instance, *args, **kwargs)
 
 
-    @abc.abstractmethod
-    def generate(self, *args, **kwargs):
-        """This method should return up to date contents of the cache."""
-        return
+    def generate(self, instance=None, *args, **kwargs):
+        if instance:
+            return instance
+        return self.model.objects.all()
 
 
 def debug_caches():
