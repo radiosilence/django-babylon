@@ -123,8 +123,9 @@ class Cache(object):
 
 
     def generate(self, instance=None, *args, **kwargs):
+        print "GENERATE", instance, args, kwargs
         if instance:
-            return instance
+            return self.model.objects.select_related().get(id=instance.id)
         return self.model.objects.all()
 
 
