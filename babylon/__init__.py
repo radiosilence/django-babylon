@@ -98,15 +98,28 @@ class Cache(object):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
         if instance:
-            self.set(self.generate(instance=instance), instance, *args, **kwargs)
-        else:
+            data = self.generate(instance=instance)
+            if data:
+                self.set(data, instance, *args, **kwargs)
+            else:
+                self.delete(instance, *args, **kwargs)
+
+        elif self.model:
             for obj in self.model.objects.all():
                 self.invalidate(sender, instance=obj)
         for parent in self._parents:
-            parent.invalidate(sender, *args, **kwargs)
+            parent.invalidate(None, *args, **kwargs)
 
 
     @abc.abstractmethod
     def generate(self, *args, **kwargs):
         """This method should return up to date contents of the cache."""
         return
+
+
+def debug_caches():
+    for k, v in CACHES.items():
+        print '\n', k
+        print '\tparents:', v._parents
+        print '\tchildren:', v._children
+
