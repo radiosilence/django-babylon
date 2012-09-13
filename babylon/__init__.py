@@ -39,6 +39,7 @@ class Cache(object):
     generic = False
     key_attr = 'id'
     m2m_models = []
+    child_attr = None
     TIMEOUT = 86400*7
 
 
@@ -110,8 +111,12 @@ class Cache(object):
     def invalidate(self, instance=None, child=None, *args, **kwargs):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
+        if not instance and self.child_attr and child:
+            instance = getattr(child, self.child_attr)
+        elif child:
+            instance = child
         if instance:
-            data = self.generate(instance=instance)
+            data = self.generate(instance=instance, child=child)
             if data:
                 self.set(data, instance, *args, **kwargs)
             else:
