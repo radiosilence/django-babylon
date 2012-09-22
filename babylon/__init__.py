@@ -129,15 +129,23 @@ class Cache(object):
             parent.invalidate(child=instance, *args, **kwargs)
 
 
-    def generate(self, key=None, instance=None, *args, **kwargs):
-        if not instance and not key:
+    def generate(self, *args, **kwargs):
+        if 'instance' not in kwargs and len(args) == 0:
             return self.model.objects.all()
-        if instance:
-            key = getattr(instance, self.key_attr)
-        if instance:
+        elif 'instance' in kwargs:
+            key = getattr(kwargs['instance'], self.key_attr)
+        elif len(args) == 1:
+            key = args[0]
+        else:
+            raise Exception('Cache no equipped for multiple args.')
+
+        try:
             return self.model.objects.select_related().get(**{
                 self.key_attr: key
             })
+        except self.model.DoesNotExist:
+            return False
+    
         
 
 
