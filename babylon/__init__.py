@@ -1,6 +1,5 @@
 import hashlib
 import abc
-import logging
 
 from django.core.cache import cache as django_cache
 from django.db.models.signals import post_save, m2m_changed
@@ -102,7 +101,6 @@ class Cache(object):
 
     def get(self, *args, **kwargs):
         result = django_cache.get(self.key(*args, **kwargs))
-        logging.debug("GET", self, self.key(*args, **kwargs), type(result))
         if not result:
             result = self.generate(*args, **kwargs)
             if result:
@@ -110,15 +108,12 @@ class Cache(object):
         return result
 
     def set(self, data, *args, **kwargs):
-        logging.debug("SETTING", self.key(*args, **kwargs))
         django_cache.set(self.key(*args, **kwargs),
             data, Cache.TIMEOUT)
 
     def delete(self, *args, **kwargs):
         for arg in self.extra_delete_args:
-            logging.debug("DELETING", self.key(*(args + (arg,)), **kwargs))
             django_cache.delete(self.key(*(args + (arg,)), **kwargs))
-        logging.debug("DELETING", self.key(*args, **kwargs))
         django_cache.delete(self.key(*args, **kwargs))
 
     def _hooks(self):
@@ -132,7 +127,6 @@ class Cache(object):
     def invalidate(self, instance=None, child=None, *args, **kwargs):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
-        logging.debug("INVALIDATING", self, instance)
         self.incr_ver()
         if not instance and self.child_attr and child:
             instance = getattr(child, self.child_attr)
