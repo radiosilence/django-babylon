@@ -1,5 +1,6 @@
 import hashlib
 import abc
+import logging
 
 from django.core.cache import cache as django_cache
 from django.db.models.signals import post_save, m2m_changed
@@ -64,12 +65,28 @@ class Cache(object):
 
         self._hooks()
 
+    @property
+    def version_key(self):
+        return '{}:__version__'.format(self.__class__.__name__)
+
+    @property
+    def version(self):
+        return django_cache.get(self.version_key) or 0
+
+    def incr_ver(self):
+        if not self.version:
+            django_cache.set(self.version_key, 0)
+        django_cache.incr(self.version_key)
+
     def add_child(self, child):
         self._children[child.__class__] = child
         child._parents.append(self)
 
     def key(self, *args, **kwargs):
-        key = '{}'.format(self.__class__.__name__)
+        key = '{}:{}'.format(
+            self.__class__.__name__,
+            self.version
+        )
         if not self.generic:
             for arg in args:
                 if hasattr(arg, self.key_attr):
@@ -78,26 +95,30 @@ class Cache(object):
                     ikey = arg
                 
                 key += ':{}'.format(ikey)
-        return hashlib.sha1(key).hexdigest()
+        return key
 
     def child(self, child, *args, **kwargs):
         return self._children[child].get(*args, **kwargs)
 
     def get(self, *args, **kwargs):
         result = django_cache.get(self.key(*args, **kwargs))
+        logging.debug("GET", self, self.key(*args, **kwargs), type(result))
         if not result:
             result = self.generate(*args, **kwargs)
-            self.set(result, *args, **kwargs)
+            if result:
+                self.set(result, *args, **kwargs)
         return result
 
     def set(self, data, *args, **kwargs):
+        logging.debug("SETTING", self.key(*args, **kwargs))
         django_cache.set(self.key(*args, **kwargs),
             data, Cache.TIMEOUT)
 
     def delete(self, *args, **kwargs):
-
         for arg in self.extra_delete_args:
+            logging.debug("DELETING", self.key(*(args + (arg,)), **kwargs))
             django_cache.delete(self.key(*(args + (arg,)), **kwargs))
+        logging.debug("DELETING", self.key(*args, **kwargs))
         django_cache.delete(self.key(*args, **kwargs))
 
     def _hooks(self):
@@ -111,11 +132,13 @@ class Cache(object):
     def invalidate(self, instance=None, child=None, *args, **kwargs):
         """This invalidates the cache and it's parents, and calls the
         regenerate method for all of them."""
+        logging.debug("INVALIDATING", self, instance)
+        self.incr_ver()
         if not instance and self.child_attr and child:
             instance = getattr(child, self.child_attr)
         elif child:
             instance = child
-        if instance:
+        if isinstance(instance, self.model):
             data = self.generate(instance=instance, child=child)
             if data:
                 self.set(data, instance, *args, **kwargs)
