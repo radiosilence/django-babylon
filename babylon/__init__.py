@@ -73,9 +73,10 @@ class Cache(object):
         return django_cache.get(self.version_key) or 0
 
     def incr_ver(self):
-        if not self.version:
+        try:
+            django_cache.incr(self.version_key)
+        except ValueError:
             django_cache.set(self.version_key, 0)
-        django_cache.incr(self.version_key)
 
     def add_child(self, child):
         self._children[child.__class__] = child
