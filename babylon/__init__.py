@@ -133,16 +133,18 @@ class Cache(object):
             instance = getattr(child, self.child_attr)
         elif child:
             instance = child
-        if isinstance(instance, self.model):
-            data = self.generate(instance=instance, child=child)
-            if data:
-                self.set(data, instance, *args, **kwargs)
-            else:
-                self.delete(instance, *args, **kwargs)
 
-        elif self.model:
-            for obj in self.model.objects.all():
-                self.invalidate(instance=obj)
+        if self.model:
+            if isinstance(instance, self.model):
+                data = self.generate(instance=instance, child=child)
+                if data:
+                    self.set(data, instance, *args, **kwargs)
+                else:
+                    self.delete(instance, *args, **kwargs)
+
+            else:
+                for obj in self.model.objects.all():
+                    self.invalidate(instance=obj)
         for parent in self._parents:
             parent.invalidate(child=instance, *args, **kwargs)
 
